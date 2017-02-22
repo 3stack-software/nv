@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[packages]
+sh = "*"
+boto3 = "*"
+click = "*"
+pew = "*"
+
+[dev-packages]
+pytest = "*"
+
+[requires]
+python_version = "2.7"

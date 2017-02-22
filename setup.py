@@ -36,6 +36,7 @@ setup(
         'sh',
         'boto3',
         'click',
+        'pew',
     ],
     entry_points={
         'console_scripts': [
