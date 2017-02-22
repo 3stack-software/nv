@@ -9,6 +9,7 @@ from os.path import exists, join, basename
 
 import boto3
 import sh
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,11 @@ def launch_shell(environment_name, project_dir):
     if exists(join(nv_dir, 'environment.json')):
         with open(join(nv_dir, 'environment.json'), 'rb') as fp:
             extra_env = json.load(fp)
+        if not isinstance(extra_env, dict):
+            raise RuntimeError('Environment: Expected dict got {0}'.format(type(extra_env)))
+        for k, v in extra_env.items():
+            if not isinstance(v, six.text_type):
+                raise RuntimeError('Environment "{0}" expected str got {1}'.format(k, type(v)))
         new_env.update(extra_env)
 
     pew_env = nv_conf.get('pew')
