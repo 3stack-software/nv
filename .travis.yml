@@ -1,0 +1,21 @@
+language: python
+python:
+- '2.7'
+before_install:
+- pip install -U pip wheel pipenv
+install:
+- pipenv install --dev
+- pip install -e .
+script:
+- pipenv run pytest tests
+cache:
+  pip: true
+deploy:
+  provider: pypi
+  user: nathan-muir
+  password:
+    secure: pdQ67uBo3KQBrIT3sT2VRNjOY+NgUMSlF3gpUr8r3m28A7w2MEgf1vrtUFtG1dam1NzUbLB6/P0uqhBx6DYsJmqKAKMBgGFo/KvwnZmUfhayREHDfh0/nMfdCxG0Dre8er7xfKJDfAxeU+tLMPQc1u5k0KwajF/BrExe6hOECjc3cExTC8bmk8MO7ymvEe2QcpvKfYG8vi+GmR6HBidd9E5566KlM6yXBNCpHyCVWfw+CG5XBVp7tLyZf+igDt3pRQNaiouEgArttU78mpPteuvw0F45z/2WxvaOirdSQday/17kyU6eTs5VAk5KzIxZzq7Fth3vsLvZPjsbKQ62+42p75Tl8CKG+2YpGOZ3Trcd9GhkNRrUdvoqwbDRluJ4M8mj5RXqO7N/Lto/hE4HHfBw2ESBLYSOGvyEHxf+lbOGH3BsaI7XjVbQqt3bGpBTdEzh5CNz5csmZRU9Th7o0rCogAwh+8A6BWuuF/3O3pf9OlEx7z5tsMftjhZXgeQ2Z9EcrT3NLvFzyKorwj3N8u0/n8ISo8DvRSPtcMNkO2z2gHLb3yvYsL1eIm97UcDdDYJWUGPAkr1SthSPhfnXXxz38kGprCLVarXdfE+o5HORGr5IEDTKyzUj07aK7kpBfeYTwFUOHJN4JuvPZ4RaS+l+p4Cw5pg4/MIsFuUyMeU=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: 3stack-software/nv
