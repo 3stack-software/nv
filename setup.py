@@ -1,35 +1,24 @@
 import codecs
-from os.path import dirname, join
+from os.path import dirname, join, abspath
 
 from setuptools import setup, find_packages
 
-here = dirname(__file__)
+here = abspath(dirname(__file__))
 
 
 def read(*parts):
-    return codecs.open(join(here, *parts), 'r').read()
+    return codecs.open(join(here, *parts), 'r', encoding='utf-8').read()
 
 
-def find_version(*file_paths):
-    version = read(*file_paths).strip()
-    if version == '':
-        raise RuntimeError('No version found')
-    return version
-
-
-def read_markdown(*file_paths):
-    try:
-        import pandoc.core
-        doc = pandoc.core.Document()
-        doc.markdown = read(*file_paths)
-        return doc.rst
-    except ImportError:
-        return ''
+def find_version(package):
+    about = {}
+    exec(read(package, '__version__.py'), about)
+    return about['__version__']
 
 
 setup(
     name='nv',
-    version=find_version('nv', 'VERSION'),
+    version=find_version('nv'),
 
     maintainer="Nathan Muir",
     maintainer_email="ndmuir@gmail.com",
@@ -40,10 +29,6 @@ setup(
     description='A utility for managing multiple configurations & environments',
 
     packages=find_packages(exclude=('tests',)),
-
-    package_data={
-        'nv': ['VERSION']
-    },
 
     setup_requires=[],
     install_requires=[

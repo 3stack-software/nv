@@ -1,3 +1,2 @@
-__version__ = __import__('pkg_resources').resource_string(__name__, 'VERSION')
-
+from .__version__ import __version__
 from .core import create, remove, launch_shell
