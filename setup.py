@@ -27,6 +27,7 @@ setup(
 
     license='Apache2',
     description='A utility for managing multiple configurations & environments',
+    long_description='\n' + read('README.rst'),
 
     packages=find_packages(exclude=('tests',)),
 
