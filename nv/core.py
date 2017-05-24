@@ -76,9 +76,12 @@ def launch_shell(environment_name, project_dir):
         'NV_PROJECT_DIR': project_dir,
         'NV_ENVIRONMENT': nv_conf['environment_name'],
         'NV_ENVIRONMENT_DIR': nv_dir,
-        # specify non-printing sequences (e.g. color codes) as non-printing, using \[...\]
-        'PS1': r'\[\e[01m\]{0[project_name]}:{0[environment_name]}\[\e[0m\] {1}'.format(nv_conf, os.environ['PS1']),
     })
+    if 'PS1' in os.environ:
+        new_env.update({
+            # specify non-printing sequences (e.g. color codes) as non-printing, using \[...\]
+            'PS1': r'\[\e[01m\]{0[project_name]}:{0[environment_name]}\[\e[0m\] {1}'.format(nv_conf, os.environ['PS1']),
+        })
     aws_profile = nv_conf.get('aws_profile')
     if aws_profile:
         session = boto3.Session(profile_name=aws_profile)
