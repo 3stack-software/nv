@@ -37,6 +37,8 @@ setup(
         'boto3',
         'click',
         'pew',
+        'cryptography',
+        'keyring',
     ],
     entry_points={
         'console_scripts': [

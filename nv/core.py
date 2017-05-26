@@ -11,10 +11,13 @@ import boto3
 import sh
 import six
 
+from .crypto import DisabledCrypto, Crypto, keyring_store, keyring_retrieve
+
 logger = logging.getLogger(__name__)
 
 
-def create(environment_name, project_dir, project_name=None, use_pew=False, aws_profile=None, environment_vars=None):
+def create(environment_name, project_dir, project_name=None, use_pew=False, aws_profile=None,
+           environment_vars=None, password=None, use_keyring=False):
     # TODO check that environment_name contains only [a-z0-9_]
     # TODO check that project_dir is fully resolved
 
@@ -32,10 +35,18 @@ def create(environment_name, project_dir, project_name=None, use_pew=False, aws_
     if not project_name:
         project_name = basename(project_dir)
 
+    if password:
+        crypto = Crypto.from_password(password)
+        if use_keyring:
+            keyring_store(nv_dir, password)
+    else:
+        crypto = DisabledCrypto()
+
     nv_conf = {
         'project_name': project_name,
         'environment_name': environment_name,
         'aws_profile': aws_profile,
+        'encryption': crypto.get_memo(),
     }
 
     if use_pew:
@@ -53,8 +64,7 @@ def create(environment_name, project_dir, project_name=None, use_pew=False, aws_
 
     if environment_vars:
         with open(join(nv_dir, 'environment.json'), 'wb') as fp:
-            json.dump(environment_vars, fp, indent=2)
-
+            crypto.json_dump(fp, environment_vars)
     return nv_dir
 
 
@@ -73,12 +83,22 @@ def remove(environment_name, project_dir):
     shutil.rmtree(nv_dir)
 
 
-def launch_shell(environment_name, project_dir):
+def launch_shell(environment_name, project_dir, password=None, update_keyring=False):
     nv_dir = join(project_dir, '.nv-{0}'.format(environment_name))
     if not exists(nv_dir):
         raise RuntimeError("Not found: '{0}'".format(nv_dir))
     with open(join(nv_dir, 'nv.json'), 'rb') as fp:
         nv_conf = json.load(fp)
+
+    if password and update_keyring:
+        keyring_store(nv_dir, password)
+    elif not password:
+        password = keyring_retrieve(nv_dir)
+
+    if password:
+        crypto = Crypto.from_memo(nv_conf.get('encryption'), password)
+    else:
+        crypto = DisabledCrypto()
 
     # TODO Unset environment variables based on pattern.
     new_env = os.environ.copy()
@@ -106,7 +126,7 @@ def launch_shell(environment_name, project_dir):
 
     if exists(join(nv_dir, 'environment.json')):
         with open(join(nv_dir, 'environment.json'), 'rb') as fp:
-            extra_env = json.load(fp)
+            extra_env = crypto.json_load(fp)
         if not isinstance(extra_env, dict):
             raise RuntimeError('Environment: Expected dict got {0}'.format(type(extra_env)))
         for k, v in extra_env.items():
