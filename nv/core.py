@@ -3,9 +3,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import json
 import logging
 import os
+import re
 import shutil
 from os import mkdir
-from os.path import exists, join, basename
+from os.path import exists, join, basename, dirname, realpath
 
 import boto3
 import sh
@@ -16,14 +17,13 @@ from .crypto import DisabledCrypto, Crypto, keyring_store, keyring_retrieve
 logger = logging.getLogger(__name__)
 
 
-def create(environment_name, project_dir, project_name=None, use_pew=False, aws_profile=None,
+def create(project_dir, environment_name='', project_name=None, use_pew=False, aws_profile=None,
            environment_vars=None, password=None, use_keyring=False):
-    # TODO check that environment_name contains only [a-z0-9_]
-    # TODO check that project_dir is fully resolved
-
-    nv_dir = join(project_dir, '.nv-{0}'.format(environment_name))
+    project_dir = realpath(project_dir)
+    _valid_environment_name(environment_name)
+    nv_dir = join(project_dir, _folder_name(environment_name))
     if exists(nv_dir):
-        raise RuntimeError("Environment exists at '{0}'".format(nv_dir))
+        raise RuntimeError("Environment already exists at '{0}'".format(nv_dir))
 
     if environment_vars:
         if not isinstance(environment_vars, dict):
@@ -50,7 +50,10 @@ def create(environment_name, project_dir, project_name=None, use_pew=False, aws_
     }
 
     if use_pew:
-        pew_env = "{0}-{1}".format(project_name, environment_name)
+        if environment_name:
+            pew_env = "{0}-{1}".format(project_name, environment_name)
+        else:
+            pew_env = project_name
         logger.info('Setting up a virtual environment... ({0})'.format(pew_env))
         # "-d" flag causes environment _not_ to activate when created
         sh.pew('new', '-d', '-a', project_dir, pew_env, _fg=True)
@@ -68,12 +71,8 @@ def create(environment_name, project_dir, project_name=None, use_pew=False, aws_
     return nv_dir
 
 
-def remove(environment_name, project_dir):
-    nv_dir = join(project_dir, '.nv-{0}'.format(environment_name))
-    if not exists(nv_dir):
-        raise RuntimeError("Not found: '{0}'".format(nv_dir))
-    with open(join(nv_dir, 'nv.json'), 'rb') as fp:
-        nv_conf = json.load(fp)
+def remove(project_dir, environment_name=''):
+    nv_dir, nv_conf = _load_nv(project_dir, environment_name)
     pew_env = nv_conf.get('pew')
     if pew_env:
         try:
@@ -83,13 +82,8 @@ def remove(environment_name, project_dir):
     shutil.rmtree(nv_dir)
 
 
-def launch_shell(environment_name, project_dir, password=None, update_keyring=False):
-    nv_dir = join(project_dir, '.nv-{0}'.format(environment_name))
-    if not exists(nv_dir):
-        raise RuntimeError("Not found: '{0}'".format(nv_dir))
-    with open(join(nv_dir, 'nv.json'), 'rb') as fp:
-        nv_conf = json.load(fp)
-
+def launch_shell(project_dir, environment_name='', password=None, update_keyring=False):
+    nv_dir, nv_conf = _load_nv(project_dir, environment_name)
     if password and update_keyring:
         keyring_store(nv_dir, password)
     elif not password:
@@ -104,14 +98,18 @@ def launch_shell(environment_name, project_dir, password=None, update_keyring=Fa
     new_env = os.environ.copy()
     new_env.update({
         'NV_PROJECT': nv_conf['project_name'],
-        'NV_PROJECT_DIR': project_dir,
+        'NV_PROJECT_DIR': dirname(nv_dir),
         'NV_ENVIRONMENT': nv_conf['environment_name'],
         'NV_ENVIRONMENT_DIR': nv_dir,
     })
     if 'PS1' in os.environ:
+        if nv_conf['environment_name']:
+            nickname = '{0[project_name]}:{0[environment_name]}'.format(nv_conf)
+        else:
+            nickname = '{0[project_name]}'.format(nv_conf)
         new_env.update({
             # specify non-printing sequences (e.g. color codes) as non-printing, using \[...\]
-            'PS1': r'\[\e[01m\]{0[project_name]}:{0[environment_name]}\[\e[0m\] {1}'.format(nv_conf, os.environ['PS1']),
+            'PS1': r'\[\e[01m\]{nickname}\[\e[0m\] {ps1}'.format(nickname=nickname, ps1=os.environ['PS1']),
         })
     aws_profile = nv_conf.get('aws_profile')
     if aws_profile:
@@ -144,3 +142,29 @@ def launch_shell(environment_name, project_dir, password=None, update_keyring=Fa
     except sh.ErrorReturnCode:
         pass
 
+
+def _valid_environment_name(environment_name):
+    if not isinstance(environment_name, six.string_types):
+        raise TypeError('Expected string got: {0}'.format(type(environment_name)))
+
+    if not environment_name or re.match(r'^[a-z][a-z0-9]*(-[a-z0-9]+)*$', environment_name):
+        return environment_name
+    raise ValueError()
+
+
+def _folder_name(environment_name=''):
+    if environment_name:
+        return '.nv-{}'.format(environment_name)
+    else:
+        return '.nv'
+
+
+def _load_nv(project_dir, environment_name):
+    project_dir = realpath(project_dir)
+    _valid_environment_name(environment_name)
+    nv_dir = join(project_dir, _folder_name(environment_name))
+    if not exists(nv_dir):
+        raise RuntimeError("Not found: '{0}'".format(nv_dir))
+    with open(join(nv_dir, 'nv.json'), 'rb') as fp:
+        nv_conf = json.load(fp)
+    return nv_dir, nv_conf
