@@ -14,13 +14,20 @@ import six
 logger = logging.getLogger(__name__)
 
 
-def create(environment_name, project_dir, project_name=None, use_pew=False, aws_profile=None):
+def create(environment_name, project_dir, project_name=None, use_pew=False, aws_profile=None, environment_vars=None):
     # TODO check that environment_name contains only [a-z0-9_]
     # TODO check that project_dir is fully resolved
 
     nv_dir = join(project_dir, '.nv-{0}'.format(environment_name))
     if exists(nv_dir):
         raise RuntimeError("Environment exists at '{0}'".format(nv_dir))
+
+    if environment_vars:
+        if not isinstance(environment_vars, dict):
+            raise RuntimeError('Environment: Expected dict got {0}'.format(type(environment_vars)))
+        for k, v in environment_vars.items():
+            if not isinstance(v, six.string_types):
+                raise RuntimeError('Environment "{0}" expected str got {1}'.format(k, type(v)))
 
     if not project_name:
         project_name = basename(project_dir)
@@ -43,6 +50,10 @@ def create(environment_name, project_dir, project_name=None, use_pew=False, aws_
     mkdir(nv_dir)
     with open(join(nv_dir, 'nv.json'), 'wb') as fp:
         json.dump(nv_conf, fp, indent=2)
+
+    if environment_vars:
+        with open(join(nv_dir, 'environment.json'), 'wb') as fp:
+            json.dump(environment_vars, fp, indent=2)
 
     return nv_dir
 

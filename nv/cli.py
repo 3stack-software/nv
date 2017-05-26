@@ -24,9 +24,11 @@ def main():
               help='''Activate a python virtualenv via pew''')
 @click.option('--aws-profile', default=None,
               help='''Obtain credentials for the given profile.''')
-def cmd_create(environment_name, project_name, project_dir, use_pew, aws_profile):
+@click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True)
+def cmd_create(environment_name, project_name, project_dir, use_pew, aws_profile, environment_vars):
     """Create a new environment in %PROJECT%/.nv-%ENVIRONMENT_NAME%"""
-    nv_dir = create(environment_name, project_dir, project_name=project_name, use_pew=use_pew, aws_profile=aws_profile)
+    nv_dir = create(environment_name, project_dir, project_name=project_name, use_pew=use_pew, aws_profile=aws_profile,
+                    environment_vars=dict(environment_vars))
     rel_dir = os.path.relpath(nv_dir, os.getcwd())
     click.echo("""
 environment created at {0}.
