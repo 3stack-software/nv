@@ -90,7 +90,7 @@ def launch_shell(environment_name, project_dir):
         new_env.update({
             'AWS_ACCESS_KEY_ID': creds.access_key,
             'AWS_SECRET_ACCESS_KEY': creds.secret_key,
-            'AWS_SESSION_TOKEN': creds.token,
+            'AWS_SESSION_TOKEN': creds.token or '',
         })
 
     if exists(join(nv_dir, 'environment.json')):
