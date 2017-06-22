@@ -6,7 +6,6 @@ verify_ssl = true
 sh = "*"
 boto3 = "*"
 click = "*"
-pew = "*"
 
 [dev-packages]
 pytest = "*"

@@ -5,8 +5,8 @@ import logging
 import os
 import re
 import shutil
-from os import mkdir
-from os.path import exists, join, basename, dirname, realpath
+from os import mkdir, makedirs
+from os.path import exists, join, basename, dirname, realpath, expanduser, expandvars
 
 import boto3
 import sh
@@ -16,9 +16,11 @@ from .crypto import DisabledCrypto, Crypto, keyring_store, keyring_retrieve
 
 logger = logging.getLogger(__name__)
 
+workon_home = realpath(expanduser(expandvars(os.environ.get('WORKON_HOME') or  '~/.virtualenvs')))
+
 
 def create(project_dir, environment_name='', project_name=None, use_pew=False, aws_profile=None,
-           environment_vars=None, password=None, use_keyring=False):
+           environment_vars=None, password=None, use_keyring=False, python_virtualenv=None):
     project_dir = realpath(project_dir)
     _valid_environment_name(environment_name)
     nv_dir = join(project_dir, _folder_name(environment_name))
@@ -48,17 +50,21 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
         'aws_profile': aws_profile,
         'encryption': crypto.get_memo(),
     }
-
-    if use_pew:
+    # Fallback for `use_pew`
+    if python_virtualenv is None:
+        python_virtualenv = use_pew
+    if python_virtualenv:
         if environment_name:
-            pew_env = "{0}-{1}".format(project_name, environment_name)
+            venv = "{0}-{1}".format(project_name, environment_name)
         else:
-            pew_env = project_name
-        logger.info('Setting up a virtual environment... ({0})'.format(pew_env))
-        # "-d" flag causes environment _not_ to activate when created
-        sh.pew('new', '-d', '-a', project_dir, pew_env, _fg=True)
+            venv = project_name
+        venv = "{}-{}".format(venv, os.urandom(4).encode('hex'))  # prevent name collisions
+        logger.info('Setting up a virtual environment... ({0})'.format(venv))
+        if not exists(workon_home):
+            makedirs(workon_home)
+        sh.virtualenv(join(workon_home, venv), _cwd=workon_home, _fg=True)
         nv_conf.update({
-            'pew': pew_env
+            'venv': venv
         })
 
     mkdir(nv_dir)
@@ -73,12 +79,9 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
 
 def remove(project_dir, environment_name=''):
     nv_dir, nv_conf = _load_nv(project_dir, environment_name)
-    pew_env = nv_conf.get('pew')
-    if pew_env:
-        try:
-            sh.pew.rm(pew_env, _fg=True)
-        except sh.ErrorReturnCode:
-            pass
+    venv = nv_conf.get('venv')
+    if venv:
+        shutil.rmtree(join(workon_home, venv))
     shutil.rmtree(nv_dir)
 
 
@@ -96,12 +99,22 @@ def launch_shell(project_dir, environment_name='', password=None, update_keyring
 
     # TODO Unset environment variables based on pattern.
     new_env = os.environ.copy()
+    path_prepends = []
     new_env.update({
         'NV_PROJECT': nv_conf['project_name'],
         'NV_PROJECT_DIR': dirname(nv_dir),
         'NV_ENVIRONMENT': nv_conf['environment_name'],
         'NV_ENVIRONMENT_DIR': nv_dir,
     })
+    venv = nv_conf.get('venv', nv_conf.get('pew'))
+    if venv:
+        venv_dir = join(workon_home, venv)
+        new_env.pop('PYTHONHOME', None)
+        new_env.pop('__PYVENV_LAUNCHER__', None)
+        path_prepends.append(join(venv_dir, 'bin'))
+        new_env.update({
+            'VIRTUAL_ENV': venv_dir,
+        })
     aws_profile = nv_conf.get('aws_profile')
     if aws_profile:
         session = boto3.Session(profile_name=aws_profile)
@@ -124,13 +137,13 @@ def launch_shell(project_dir, environment_name='', password=None, update_keyring
                 raise RuntimeError('Environment "{0}" expected str got {1}'.format(k, type(v)))
         new_env.update(extra_env)
 
-    pew_env = nv_conf.get('pew')
+    if path_prepends:
+        new_env.update({
+            'PATH': os.pathsep.join(path_prepends + [new_env['PATH'],])
+        })
+
     try:
-        if pew_env:
-            sh.pew.workon(pew_env, _env=new_env, _fg=True)
-        else:
-            # TODO seems too simple, are we missing anything
-            sh.Command(os.environ['SHELL'])(_fg=True, _env=new_env)
+        sh.Command(os.environ['SHELL'])(_fg=True, _env=new_env)
     except sh.ErrorReturnCode:
         pass
 

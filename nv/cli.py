@@ -21,21 +21,23 @@ def main():
 @click.option('--project-dir', '-d', default='.',
               type=click.Path(file_okay=False, dir_okay=True, exists=True),
               help='''Path to the project project (defaults to current directory)''')
-@click.option('use_pew', '--pew', is_flag=True, default=False,
-              help='''Activate a python virtualenv via pew''')
+@click.option('--python-virtualenv', '-py', is_flag=True, default=False,
+              help='''Activate a python virtualenv''')
 @click.option('--aws-profile', default=None,
               help='''Obtain credentials for the given profile.''')
 @click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True)
 @click.option('wants_password', '-P', default=False, is_flag=True)
 @click.option('use_keyring', '-K', default=False, is_flag=True)
-def cmd_create(environment_name, project_name, project_dir, use_pew, aws_profile, environment_vars, wants_password, use_keyring):
+def cmd_create(environment_name, project_name, project_dir, python_virtualenv, aws_profile, environment_vars, wants_password, use_keyring):
     """Create a new environment in %PROJECT%/.nv-%ENVIRONMENT_NAME%"""
     password = None
     if wants_password:
         password = click.prompt('Password', hide_input=True)
 
-    nv_dir = create(project_dir, environment_name, project_name=project_name, use_pew=use_pew, aws_profile=aws_profile,
-                    environment_vars=dict(environment_vars), password=password, use_keyring=use_keyring)
+    nv_dir = create(
+        project_dir, environment_name, project_name=project_name, python_virtualenv=python_virtualenv,
+        aws_profile=aws_profile, environment_vars=dict(environment_vars), password=password, use_keyring=use_keyring
+    )
     rel_dir = os.path.relpath(nv_dir, os.getcwd())
     click.echo("""
 environment created at {0}.

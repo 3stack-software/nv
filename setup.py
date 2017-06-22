@@ -36,7 +36,6 @@ setup(
         'sh',
         'boto3',
         'click',
-        'pew',
         'cryptography',
         'keyring',
     ],
