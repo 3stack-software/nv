@@ -102,15 +102,6 @@ def launch_shell(project_dir, environment_name='', password=None, update_keyring
         'NV_ENVIRONMENT': nv_conf['environment_name'],
         'NV_ENVIRONMENT_DIR': nv_dir,
     })
-    if 'PS1' in os.environ:
-        if nv_conf['environment_name']:
-            nickname = '{0[project_name]}:{0[environment_name]}'.format(nv_conf)
-        else:
-            nickname = '{0[project_name]}'.format(nv_conf)
-        new_env.update({
-            # specify non-printing sequences (e.g. color codes) as non-printing, using \[...\]
-            'PS1': r'\[\e[01m\]{nickname}\[\e[0m\] {ps1}'.format(nickname=nickname, ps1=os.environ['PS1']),
-        })
     aws_profile = nv_conf.get('aws_profile')
     if aws_profile:
         session = boto3.Session(profile_name=aws_profile)
