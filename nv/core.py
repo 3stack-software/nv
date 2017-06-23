@@ -86,6 +86,27 @@ def remove(project_dir, environment_name=''):
 
 
 def launch_shell(project_dir, environment_name='', password=None, update_keyring=False):
+    return invoke(
+        command=os.environ['SHELL'], arguments=[],
+        project_dir=project_dir, environment_name=environment_name,
+        password=password, update_keyring=update_keyring
+    )
+
+
+def invoke(command, arguments, project_dir, environment_name='', password=None, update_keyring=False):
+    new_env = _prepare_environment(
+        project_dir=project_dir, environment_name=environment_name,
+        password=password, update_keyring=update_keyring
+    )
+    search_paths = new_env.get('PATH', '').split(os.pathsep)
+    try:
+        sh.Command(command, search_paths)(*arguments, _fg=True, _env=new_env)
+        return 0
+    except sh.ErrorReturnCode as exc:
+        return exc.exit_code
+
+
+def _prepare_environment(project_dir, environment_name='', password=None, update_keyring=False):
     nv_dir, nv_conf = _load_nv(project_dir, environment_name)
     if password and update_keyring:
         keyring_store(nv_dir, password)
@@ -141,11 +162,7 @@ def launch_shell(project_dir, environment_name='', password=None, update_keyring
         new_env.update({
             'PATH': os.pathsep.join(path_prepends + [new_env['PATH'],])
         })
-
-    try:
-        sh.Command(os.environ['SHELL'])(_fg=True, _env=new_env)
-    except sh.ErrorReturnCode:
-        pass
+    return new_env
 
 
 def _valid_environment_name(environment_name):

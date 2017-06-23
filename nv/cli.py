@@ -3,7 +3,7 @@ import os
 
 import click
 
-from .core import create, remove, launch_shell, _valid_environment_name
+from .core import create, remove, launch_shell, invoke, _valid_environment_name
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -65,5 +65,31 @@ def cmd_shell(ctx):
     """Launch a new shell in the specified environment."""
     environment_name, project_dir, password, use_keyring = ctx.obj
     click.echo("Launching nv subshell. Type 'exit' or 'Ctrl+D' to return.")
-    launch_shell(project_dir, environment_name, password, use_keyring)
+    exit_code = launch_shell(project_dir, environment_name, password, use_keyring)
     click.echo('Environment closed.')
+    if exit_code:
+        raise ExitCode('Non-zero exit', exit_code)
+
+
+@main.command('run', context_settings=dict(
+    ignore_unknown_options=True,
+    allow_extra_args=True
+))
+@click.argument('command')
+@click.argument('args', nargs=-1)
+@click.pass_context
+def cmd_run(ctx, command, args):
+    """Runs a command in the specified environment."""
+    environment_name, project_dir, password, use_keyring = ctx.obj
+    exit_code = invoke(command, args, project_dir, environment_name, password, use_keyring)
+    if exit_code:
+        raise ExitCode('Non-zero exit', exit_code)
+
+
+class ExitCode(click.ClickException):
+    def __init__(self, message, exit_code):
+        self.exit_code = exit_code
+        super(ExitCode, self).__init__(message)
+
+    def show(self, file=None):
+        pass
