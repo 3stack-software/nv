@@ -31,7 +31,8 @@ def main(ctx, environment_name, project_dir, wants_password, use_keyring):
               help='''Activate a python virtualenv''')
 @click.option('--aws-profile', default=None,
               help='''Obtain credentials for the given profile.''')
-@click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True)
+@click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True,
+              help='''Name & Value of environment variables to set''')
 @click.pass_context
 def cmd_create(ctx, project_name, python_virtualenv, aws_profile, environment_vars):
     """Create a new environment in %PROJECT%/.nv-%ENVIRONMENT_NAME%"""
