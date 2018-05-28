@@ -66,10 +66,7 @@ def cmd_shell(ctx):
     """Launch a new shell in the specified environment."""
     environment_name, project_dir, password, use_keyring = ctx.obj
     click.echo("Launching nv subshell. Type 'exit' or 'Ctrl+D' to return.")
-    exit_code = launch_shell(project_dir, environment_name, password, use_keyring)
-    click.echo('Environment closed.')
-    if exit_code:
-        raise ExitCode('Non-zero exit', exit_code)
+    launch_shell(project_dir, environment_name, password, use_keyring)
 
 
 @main.command('run', context_settings=dict(
@@ -82,9 +79,7 @@ def cmd_shell(ctx):
 def cmd_run(ctx, command, args):
     """Runs a command in the specified environment."""
     environment_name, project_dir, password, use_keyring = ctx.obj
-    exit_code = invoke(command, args, project_dir, environment_name, password, use_keyring)
-    if exit_code:
-        raise ExitCode('Non-zero exit', exit_code)
+    invoke(command, args, project_dir, environment_name, password, use_keyring)
 
 
 class ExitCode(click.ClickException):

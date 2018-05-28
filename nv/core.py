@@ -99,11 +99,13 @@ def invoke(command, arguments, project_dir, environment_name='', password=None, 
         password=password, update_keyring=update_keyring
     )
     search_paths = new_env.get('PATH', '').split(os.pathsep)
-    try:
-        sh.Command(command, search_paths)(*arguments, _fg=True, _env=new_env)
-        return 0
-    except sh.ErrorReturnCode as exc:
-        return exc.exit_code
+    path = sh.which(command, search_paths)
+    if not path:
+        raise RuntimeError('executable not found: {}'.format(command))
+    cmd = [path]
+    cmd += arguments
+    os.execve(cmd[0], cmd, new_env)
+    raise Exception('Unreachable')
 
 
 def _prepare_environment(project_dir, environment_name='', password=None, update_keyring=False):
