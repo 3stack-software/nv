@@ -31,6 +31,8 @@ setup(
 
     packages=find_packages(exclude=('tests',)),
 
+    python_requires='>= 2.7, < 3',
+
     setup_requires=[],
     install_requires=[
         'sh',
