@@ -29,16 +29,19 @@ def main(ctx, environment_name, project_dir, wants_password, use_keyring):
               help='''Your project name (defaults to current directory name)''')
 @click.option('--python-virtualenv', '-py', is_flag=True, default=False,
               help='''Activate a python virtualenv''')
+@click.option('python_bin', '--python', default=None,
+              help='''The python interpreter to use.''')
 @click.option('--aws-profile', default=None,
               help='''Obtain credentials for the given profile.''')
 @click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True,
               help='''Name & Value of environment variables to set''')
 @click.pass_context
-def cmd_create(ctx, project_name, python_virtualenv, aws_profile, environment_vars):
+def cmd_create(ctx, project_name, python_virtualenv, python_bin, aws_profile, environment_vars):
     """Create a new environment in %PROJECT%/.nv-%ENVIRONMENT_NAME%"""
     environment_name, project_dir, password, use_keyring = ctx.obj
     nv_dir = create(
-        project_dir, environment_name, project_name=project_name, python_virtualenv=python_virtualenv,
+        project_dir, environment_name, project_name=project_name,
+        python_virtualenv=python_virtualenv, python_bin=python_bin,
         aws_profile=aws_profile, environment_vars=dict(environment_vars), password=password, use_keyring=use_keyring
     )
     rel_dir = os.path.relpath(nv_dir, os.getcwd())

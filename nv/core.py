@@ -20,7 +20,7 @@ workon_home = realpath(expanduser(expandvars(os.environ.get('WORKON_HOME') or  '
 
 
 def create(project_dir, environment_name='', project_name=None, use_pew=False, aws_profile=None,
-           environment_vars=None, password=None, use_keyring=False, python_virtualenv=None):
+           environment_vars=None, password=None, use_keyring=False, python_virtualenv=None, python_bin=None):
     project_dir = realpath(project_dir)
     _valid_environment_name(environment_name)
     nv_dir = join(project_dir, _folder_name(environment_name))
@@ -53,7 +53,7 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
     # Fallback for `use_pew`
     if python_virtualenv is None:
         python_virtualenv = use_pew
-    if python_virtualenv:
+    if python_bin or python_virtualenv:
         if environment_name:
             venv = "{0}-{1}".format(project_name, environment_name)
         else:
@@ -62,7 +62,10 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
         logger.info('Setting up a virtual environment... ({0})'.format(venv))
         if not exists(workon_home):
             makedirs(workon_home)
-        sh.virtualenv(join(workon_home, venv), _cwd=workon_home, _fg=True)
+        if python_bin:
+            sh.virtualenv('--python', python_bin, join(workon_home, venv), _cwd=workon_home, _fg=True)
+        else:
+            sh.virtualenv(join(workon_home, venv), _cwd=workon_home, _fg=True)
         nv_conf.update({
             'venv': venv
         })
