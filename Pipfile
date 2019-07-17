@@ -6,9 +6,11 @@ verify_ssl = true
 sh = "*"
 boto3 = "*"
 click = "*"
+cryptography = "*"
+keyring = "*"
 
 [dev-packages]
 pytest = "*"
 
 [requires]
-python_version = "2.7"
+python_version = "3"

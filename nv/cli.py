@@ -33,7 +33,7 @@ def main(ctx, environment_name, project_dir, wants_password, use_keyring):
               help='''The python interpreter to use.''')
 @click.option('--aws-profile', default=None,
               help='''Obtain credentials for the given profile.''')
-@click.option('environment_vars', '--env', type=(unicode, unicode), multiple=True,
+@click.option('environment_vars', '--env', type=(str, str), multiple=True,
               help='''Name & Value of environment variables to set''')
 @click.pass_context
 def cmd_create(ctx, project_name, python_virtualenv, python_bin, aws_profile, environment_vars):

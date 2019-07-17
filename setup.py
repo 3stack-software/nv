@@ -31,7 +31,7 @@ setup(
 
     packages=find_packages(exclude=('tests',)),
 
-    python_requires='>= 2.7, < 3',
+    python_requires='>= 3.6',
 
     setup_requires=[],
     install_requires=[
@@ -50,7 +50,8 @@ setup(
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 )

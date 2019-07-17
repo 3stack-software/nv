@@ -1,12 +1,9 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import base64
 import json
 import os
 from os.path import abspath
 
 import keyring
-import six
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -79,9 +76,9 @@ class Crypto(object):
 
     @staticmethod
     def derive_key(salt, password, key_length=32):
-        if isinstance(salt, six.text_type):
+        if isinstance(salt, str):
             salt = salt.encode('utf-8')
-        if isinstance(password, six.text_type):
+        if isinstance(password, str):
             password = password.encode('utf-8')
         kdf = Scrypt(
             salt=base64.urlsafe_b64decode(salt),
@@ -91,7 +88,7 @@ class Crypto(object):
             p=1,
             backend=default_backend(),
         )
-        key = kdf.derive(bytes(password))
+        key = kdf.derive(password)
         return base64.urlsafe_b64encode(key)
 
     @staticmethod

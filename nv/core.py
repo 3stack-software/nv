@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import json
 import logging
 import os
@@ -10,13 +8,12 @@ from os.path import exists, join, basename, dirname, realpath, expanduser, expan
 
 import boto3
 import sh
-import six
 
 from .crypto import DisabledCrypto, Crypto, keyring_store, keyring_retrieve
 
 logger = logging.getLogger(__name__)
 
-workon_home = realpath(expanduser(expandvars(os.environ.get('WORKON_HOME') or  '~/.virtualenvs')))
+workon_home = realpath(expanduser(expandvars(os.environ.get('WORKON_HOME') or '~/.virtualenvs')))
 
 
 def create(project_dir, environment_name='', project_name=None, use_pew=False, aws_profile=None,
@@ -31,7 +28,7 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
         if not isinstance(environment_vars, dict):
             raise RuntimeError('Environment: Expected dict got {0}'.format(type(environment_vars)))
         for k, v in environment_vars.items():
-            if not isinstance(v, six.string_types):
+            if not isinstance(v, str):
                 raise RuntimeError('Environment "{0}" expected str got {1}'.format(k, type(v)))
 
     if not project_name:
@@ -58,7 +55,7 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
             venv = "{0}-{1}".format(project_name, environment_name)
         else:
             venv = project_name
-        venv = "{}-{}".format(venv, os.urandom(4).encode('hex'))  # prevent name collisions
+        venv = "{}-{}".format(venv, os.urandom(4).hex())  # prevent name collisions
         logger.info('Setting up a virtual environment... ({0})'.format(venv))
         if not exists(workon_home):
             makedirs(workon_home)
@@ -71,11 +68,11 @@ def create(project_dir, environment_name='', project_name=None, use_pew=False, a
         })
 
     mkdir(nv_dir)
-    with open(join(nv_dir, 'nv.json'), 'wb') as fp:
+    with open(join(nv_dir, 'nv.json'), 'w') as fp:
         json.dump(nv_conf, fp, indent=2)
 
     if environment_vars:
-        with open(join(nv_dir, 'environment.json'), 'wb') as fp:
+        with open(join(nv_dir, 'environment.json'), 'w') as fp:
             crypto.json_dump(fp, environment_vars)
     return nv_dir
 
@@ -154,12 +151,12 @@ def _prepare_environment(project_dir, environment_name='', password=None, update
         })
 
     if exists(join(nv_dir, 'environment.json')):
-        with open(join(nv_dir, 'environment.json'), 'rb') as fp:
+        with open(join(nv_dir, 'environment.json'), 'r') as fp:
             extra_env = crypto.json_load(fp)
         if not isinstance(extra_env, dict):
             raise RuntimeError('Environment: Expected dict got {0}'.format(type(extra_env)))
         for k, v in extra_env.items():
-            if not isinstance(v, six.text_type):
+            if not isinstance(v, str):
                 raise RuntimeError('Environment "{0}" expected str got {1}'.format(k, type(v)))
         new_env.update(extra_env)
 
@@ -171,7 +168,7 @@ def _prepare_environment(project_dir, environment_name='', password=None, update
 
 
 def _valid_environment_name(environment_name):
-    if not isinstance(environment_name, six.string_types):
+    if not isinstance(environment_name, str):
         raise TypeError('Expected string got: {0}'.format(type(environment_name)))
 
     if not environment_name or re.match(r'^[a-z][a-z0-9]*(-[a-z0-9]+)*$', environment_name):
@@ -192,6 +189,6 @@ def _load_nv(project_dir, environment_name):
     nv_dir = join(project_dir, _folder_name(environment_name))
     if not exists(nv_dir):
         raise RuntimeError("Not found: '{0}'".format(nv_dir))
-    with open(join(nv_dir, 'nv.json'), 'rb') as fp:
+    with open(join(nv_dir, 'nv.json'), 'r') as fp:
         nv_conf = json.load(fp)
     return nv_dir, nv_conf
