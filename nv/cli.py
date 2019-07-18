@@ -2,14 +2,23 @@ import logging
 import os
 
 import click
-
+from .__version__ import __version__ as v
 from .core import create, remove, launch_shell, invoke, _valid_environment_name
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
+def print_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo('nv, version {}'.format(v))
+    ctx.exit()
+
+
 @click.group()
+@click.option('--version', is_flag=True, callback=print_version,
+              expose_value=False, is_eager=True)
 @click.option('--environment-name', '-n', default='', type=_valid_environment_name)
 @click.option('--project-dir', '-d', default='.',
               type=click.Path(file_okay=False, dir_okay=True, exists=True),
